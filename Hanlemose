@@ -1,0 +1,95 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "SpeedJumpGui"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.fromScale(0.4, 0.4)
+frame.Position = UDim2.fromScale(0.3, 0.3)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+-- Labels
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Text = "Speed"
+speedLabel.Size = UDim2.fromScale(0.8, 0.1)
+speedLabel.Position = UDim2.fromScale(0.1, 0.1)
+speedLabel.TextColor3 = Color3.new(1,1,1)
+speedLabel.BackgroundTransparency = 1
+
+local jumpLabel = speedLabel:Clone()
+jumpLabel.Text = "Jump Power"
+jumpLabel.Position = UDim2.fromScale(0.1, 0.4)
+jumpLabel.Parent = frame
+
+-- Bars
+local function createBar(yPos)
+	local bar = Instance.new("Frame", frame)
+	bar.Size = UDim2.fromScale(0.8, 0.08)
+	bar.Position = UDim2.fromScale(0.1, yPos)
+	bar.BackgroundColor3 = Color3.fromRGB(70,70,70)
+
+	local fill = Instance.new("Frame", bar)
+	fill.Size = UDim2.fromScale(0.5, 1)
+	fill.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+	return bar, fill
+end
+
+local speedBar, speedFill = createBar(0.22)
+local jumpBar, jumpFill = createBar(0.52)
+
+local speedValue = 16
+local jumpValue = 50
+
+-- Drag logic
+local function makeDraggable(bar, fill, callback)
+	local dragging = false
+
+	bar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+		end
+	end)
+
+	bar.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	game:GetService("UserInputService").InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local percent = math.clamp(
+				(input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X,
+				0, 1
+			)
+			fill.Size = UDim2.fromScale(percent, 1)
+			callback(percent)
+		end
+	end)
+end
+
+makeDraggable(speedBar, speedFill, function(p)
+	speedValue = math.floor(8 + p * 92) -- 8 to 100
+end)
+
+makeDraggable(jumpBar, jumpFill, function(p)
+	jumpValue = math.floor(20 + p * 180) -- 20 to 200
+end)
+
+-- Continue Button
+local button = Instance.new("TextButton", frame)
+button.Text = "Continue"
+button.Size = UDim2.fromScale(0.5, 0.15)
+button.Position = UDim2.fromScale(0.25, 0.75)
+button.BackgroundColor3 = Color3.fromRGB(0,200,100)
+button.TextScaled = true
+
+button.MouseButton1Click:Connect(function()
+	humanoid.WalkSpeed = speedValue
+	humanoid.JumpPower = jumpValue
+	gui:Destroy()
+end)
